@@ -13,7 +13,7 @@ try:
     goldcount = loaded_data["goldcount"] # 🛠️ Fixed: Extracts the specific gold value safely
     print("📂 Game loaded successfully!")
     
-except FileNotFoundError or KeyError:
+except (FileNotFoundError, KeyError):
     print("No save file found. Starting a fresh game!")
     inventory = {
         "item1": "empty",
