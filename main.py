@@ -3,7 +3,7 @@ import pickle
 
 # Try to open the save file and load the data back into your variables
 try:
-    with open("savegame.pkl", "rb") as file
+    with open("savegame.pkl", "rb") as file:
         loaded_data = pickle.load(file)
         
     playerhealth = loaded_data["playerhealth"]
@@ -13,7 +13,7 @@ try:
     goldcount = loaded_data["goldcount"] # 🛠️ Fixed: Extracts the specific gold value safely
     print("📂 Game loaded successfully!")
     
-except FileNotFoundError:
+except FileNotFoundError or KeyError:
     print("No save file found. Starting a fresh game!")
     inventory = {
         "item1": "empty",
