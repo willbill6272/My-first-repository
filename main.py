@@ -1,7 +1,7 @@
 import random
 import pickle
 
-# Try to open the save file and load the data back into your variables
+# --- SAVE / LOAD INITIALIZATION ---
 try:
     with open("savegame.pkl", "rb") as file:
         loaded_data = pickle.load(file)
@@ -9,8 +9,8 @@ try:
     playerhealth = loaded_data["playerhealth"]
     monsterhealth = loaded_data["monsterhealth"]
     inventory = loaded_data["inventory"]
-    weapon_unlocks = loaded_data["weapon_unlocks"] # Load saved weapon unlocks
-    goldcount = loaded_data["goldcount"] # 🛠️ Fixed: Extracts the specific gold value safely
+    weapon_unlocks = loaded_data["weapon_unlocks"]
+    goldcount = loaded_data["goldcount"]
     print("📂 Game loaded successfully!")
     
 except (FileNotFoundError, KeyError):
@@ -22,12 +22,12 @@ except (FileNotFoundError, KeyError):
         "item4": "empty",
         "item5": "empty",
     }
-    # Default weapon unlocks for a fresh game (Sword & Nunchucks unlocked, Spear & Bow locked)
+    # Default weapon unlocks for a fresh game
     weapon_unlocks = {
         "sword": True,
         "spear": False,
         "bow": False,
-        "nunchucks": True, # Pluralized to match your input checks
+        "nunchucks": True,
     }
     playerhealth = 50
     monsterhealth = 25
@@ -36,38 +36,80 @@ except (FileNotFoundError, KeyError):
 playeralive = True
 monsteralive = True
 
+# --- MARKETPLACE DATA ---
+available_items = {
+    1: {
+        "name": "Health Potion",
+        "price": 15,
+        "description": "Restores health in a pinch."
+    },
+    2: {
+        "name": "Mysterious Necklace",
+        "price": 50,
+        "description": "A mysterious man offers you a simple chain necklace."
+    },
+}
+
+# --- FUNCTIONS ---
 def pickup(itempickup):
     for slot in inventory:
         if inventory[slot] == "empty":
             inventory[slot] = itempickup
             print(f"Added {itempickup} to {slot}!")
-            return # Stops running once it finds the first empty slot
+            return
     print("Inventory is full!")
 
+def market():
+    global goldcount
+    print("\n=== 🛒 WELCOME TO THE MARKETPLACE ===")
+    print("Here you can buy items using your gold!")
+    for item_key, data in available_items.items():
+        print(f"[{item_key}] {data['name']} - 💰 {data['price']}g")
+        print(f"    \"{data['description']}\"")
+    print("=====================================")
+    
+    choice = input("Enter the number of the item you want to buy (or press Enter to exit): ")
+    
+    if choice == "1":
+        if goldcount >= 15:
+            goldcount -= 15
+            pickup("potion")
+            print("🎉 Purchased Health Potion!")
+        else:
+            print("❌ You don't have enough gold!")
+    elif choice == "2":
+        if goldcount >= 50:
+            goldcount -= 50
+            pickup("necklace")
+            print("🎉 Purchased Mysterious Necklace!")
+        else:
+            print("❌ You don't have enough gold!")
+    else:
+        print("Leaving the marketplace...")
+
+# --- MAIN GAME LOOP ---
 while playeralive:
-    # Update save_data inside the loop so it captures current stats, unlocks, and gold
+    # Update save_data inside the loop
     save_data = {
         "playerhealth": playerhealth,
         "monsterhealth": monsterhealth,
         "inventory": inventory,
         "weapon_unlocks": weapon_unlocks,
-        "goldcount": goldcount # 🛠️ Added: Gold is now tracked in save data packets
+        "goldcount": goldcount
     }
     
     longtext = f"""\nattack? (spear, sword, bow, nunchucks),
-or you can use an item if you have any, you have:
+or type "market" to shop, "save", "quit",
 Inventory: {inventory}
 Weapons: {weapon_unlocks}
-Gold: {goldcount}g
-or type "save" or "quit": """
+Gold: {goldcount}g: """
 
-    X = input(longtext)
+    X = input(longtext).strip().lower()
     
     if X == "nunchuck":
         X = "nunchucks"
         
     if X == "spear":
-        # Check if the weapon is unlocked before allowing use
         if not weapon_unlocks.get("spear", False):
             print("🔒 You haven't unlocked the spear yet!")
             continue
@@ -75,17 +117,15 @@ or type "save" or "quit": """
         damage = round(random.triangular(1, 5, 3))
         monsterhealth = monsterhealth - damage
         
-        # Check for the critical hit FIRST
         if damage == 5:
             print("💥 CRITICAL HIT: 5 max damage!")
         else:
             print(f"You hit the monster for {damage} damage! Monster HP: {monsterhealth}")
             
-    elif X == "yes" or X == " ":
+    elif X == "yes" or X == "":
         continue
         
     elif X == "nunchucks":
-        # Check if the weapon is unlocked before allowing use
         if not weapon_unlocks.get("nunchucks", False):
             print("🔒 You haven't unlocked the nunchucks yet!")
             continue
@@ -96,13 +136,11 @@ or type "save" or "quit": """
         print(f"Monster HP: {monsterhealth}")
         
     elif X == "sword":
-        # Check if the weapon is unlocked before allowing use
         if not weapon_unlocks.get("sword", False):
             print("🔒 You haven't unlocked the sword yet!")
             continue
             
         damage = round(random.triangular(1, 10, 7))
-        # Check for max damage or armor misses before normal hits!
         if damage == 10:
             monsterhealth = monsterhealth - damage
             print("💥 CRITICAL HIT: 10 max damage! Monster HP:", monsterhealth)
@@ -110,9 +148,12 @@ or type "save" or "quit": """
             monsterhealth = monsterhealth - damage
             print(f"You hit the monster for {damage} damage! Monster HP: {monsterhealth}")
         else:
-            # Handles rolls of 1, 2, and 3 (the armor miss mechanic)
             print(f"You rolled a {damage}... It bounced right off the monster's armor! Failed to hit.")
             
+    elif X == "market":
+        market()
+        continue
+        
     elif X == "save":
         with open("savegame.pkl", "wb") as file:
             pickle.dump(save_data, file)
@@ -124,7 +165,6 @@ or type "save" or "quit": """
         break
         
     elif X == "bow":
-        # Check if the weapon is unlocked before allowing use
         if not weapon_unlocks.get("bow", False):
             print("🔒 You haven't unlocked the bow yet!")
             continue
@@ -132,30 +172,27 @@ or type "save" or "quit": """
         bow_roll = random.randint(1, 10)
         
         if bow_roll == 1:
-            # 10% Chance: Bow snaps or arrow backfires!
             self_damage = random.randint(10, 15)
             playerhealth -= self_damage
             print(f"🏹 You forgot how bows work and hit yourself for {self_damage} damage! Your HP: {playerhealth}")
             
-            # Check if the backfire killed you on the spot!
             if playerhealth <= 0:
                 print("\n💀 GAME OVER! You accidentally killed yourself in the dungeon.")
                 playeralive = False
                 break
-            continue # 🚀 Jumps back to input, skipping the monster's attack!
+            continue
             
-        elif bow_roll >= 2 and bow_roll <= 5:
+        elif 2 <= bow_roll <= 5:
             print("🏹 Your arrow flew wide and missed the monster completely!")
-            continue # 🚀 Skips the monster's turn and lets you try again!
+            continue
             
         else:
-            # 50% Chance (Rolls 6-10): Extreme flat damage
             damage = random.randint(10, 15)
             monsterhealth -= damage
             print(f"💥 DIRECT HIT! The arrow pierces the beast for {damage} damage! Monster HP: {monsterhealth}")
             
     elif X == "quit" or X == "exit":
-        confirm = input("Are you sure you want to quit? (yes/no): ")
+        confirm = input("Are you sure you want to quit? (yes/no): ").strip().lower()
         if confirm == "yes":
             print("Thanks for playing! See you next time.")
             playeralive = False
@@ -166,21 +203,25 @@ or type "save" or "quit": """
         print("Invalid input! You fumbled your weapon.")
         continue
 
-    # Check if monster died before it gets to strike back
+    # Check if monster died
     if monsterhealth <= 0:
         print("\n🏆 VICTORY! You slaughtered the beast!")
         monsteralive = False
         pickup("potion")
         weapon_unlocks["spear"] = True
-        goldcount += 10 # 💰 Bonus reward: finding gold when slaying the monster!
+        goldcount += 10
         print("💰 You found 10 gold pieces on the beast!")
+        
+        # Auto-save victory progress so you don't lose the gold/spear unlock
+        with open("savegame.pkl", "wb") as file:
+            pickle.dump(save_data, file)
+        print("💾 Victory progress saved automatically!")
         break
 
     # Monster's Counter-Attack
     mdamage = round(random.triangular(1, 10, 5))
     playerhealth = playerhealth - mdamage
     
-    # Monster special dialog logic (Highest damage checked first!)
     if mdamage == 10:
         print(f"🚨 DEVASTATING ATTACK: 10 damage! Your HP: {playerhealth}")
     elif mdamage >= 8:
@@ -194,5 +235,5 @@ or type "save" or "quit": """
         playeralive = False
         break
 
-print("Final Inventory:", inventory)
+print("\nFinal Inventory:", inventory)
 print("Final Gold Count:", goldcount)
