@@ -1,12 +1,12 @@
-import pickle
+import json
 
 def load_game():
     try:
-        with open("savegame.pkl", "rb") as file:
-            loaded_data = pickle.load(file)
-            print("📂 Game loaded successfully!")
+        with open("player.json", "r") as file:
+            loaded_data = json.load(file)
+            print("📂 Game loaded successfully from JSON!")
             return loaded_data
-    except (FileNotFoundError, KeyError):
+    except (FileNotFoundError, json.JSONDecodeError):
         print("No save file found. Starting a fresh game!")
         return {
             "playerhealth": 50,
@@ -28,6 +28,6 @@ def load_game():
         }
 
 def save_game(game_state):
-    with open("savegame.pkl", "wb") as file:
-        pickle.dump(game_state, file)
-    print("💾 Game saved successfully!")
+    with open("player.json", "w") as file:
+        json.dump(game_state, file, indent=4)
+    print("💾 Game saved successfully to JSON!")
